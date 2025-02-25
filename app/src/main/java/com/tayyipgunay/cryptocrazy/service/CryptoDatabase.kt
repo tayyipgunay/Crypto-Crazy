@@ -53,7 +53,7 @@ import com.tayyipgunay.cryptocrazy.model.CryptoModel
              * `databaseBuilder`: Room’un sağladığı bir fonksiyon. Veritabanını tanımlamak için kullanılır.
              * Burada `CryptoDataBase` sınıfını veritabanı olarak belirtiyor ve ona bir isim veriyoruz ("cryptodatabase").
              */
-            private fun makeDatabase(context: Context) =
+            private fun makeDatabase(context: Context) =//dataBase oluşturma
                 Room.databaseBuilder(
                     context.applicationContext, // Uygulamanın bağlamını (context) kullanıyoruz.
                     CryptoDataBase::class.java, // Veritabanını temsil eden sınıf.
