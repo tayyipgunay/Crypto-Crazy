@@ -56,7 +56,7 @@ API anahtarınızı `.env` veya `local.properties` dosyanıza eklemeniz gerekmek
 
 ## Lisans
 
-Bu proje MIT Lisansı ile lisanslanmıştır. ![WhatsApp Görsel 2025-02-26 saat 15 59 34_dc93f0cc](https://github.com/user-attachments/assets/f9e6d856-ae8d-416c-abc3-b3f9a122467f) ![WhatsApp Görsel 2025-02-26 saat 15 59 34_188c2e55](https://github.com/user-attachments/assets/f442937b-cac7-4fbc-a2da-d40402a44572)
+Bu proje MIT Lisansı ile lisanslanmıştır. ![WhatsApp Görsel 2025-02-26 saat 15 59 34_dc93f0cc](https://github.com/user-attachments/assets/f9e6d856-ae8d-416c-abc3-b3f9a122467f) ![WhatsApp Görsel 2025-02-26 saat 15 59 34_cc072341](https://github.com/user-attachments/assets/a245168c-a13a-4658-8a2b-04a7a833fec5)
 
 
 
