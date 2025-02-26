@@ -9,20 +9,21 @@ import com.google.gson.annotations.SerializedName
 data class CryptoModel(
     @PrimaryKey
     @SerializedName("id")
-    val id: String,
+    val id: String, // Kripto paranın benzersiz ID'si, Room veritabanında primary key olarak kullanılır.
 
     @ColumnInfo(name = "symbol")
     @SerializedName("symbol")
-    val symbol: String,
+    val symbol: String, // Kripto para sembolü, örneğin BTC, ETH gibi.
 
     @ColumnInfo(name = "image")
     @SerializedName("image")
-    val image: String,
+    val image: String, // Kripto paranın logosunun URL'si.
 
     @ColumnInfo(name = "current_price")
     @SerializedName("current_price")
-    val currentPrice: Double
+    val currentPrice: Double // Kripto paranın o anki fiyatı.
 )
+
   /*  @PrimaryKey(autoGenerate = true)
     var uuid: Int = 0
 */

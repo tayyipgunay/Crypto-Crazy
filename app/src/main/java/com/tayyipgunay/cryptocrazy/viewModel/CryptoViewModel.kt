@@ -17,175 +17,113 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-class CryptoViewModel
-@Inject constructor( private val repository: CryptoRepository,application: Application) : BaseViewModel(application) {
+class CryptoViewModel @Inject constructor(
+    private val repository: CryptoRepository, // CryptoRepository, veri kaynağına erişim sağlar.
+    application: Application // Application context'i, SharedPreferences ve veritabanı işlemleri için kullanılır.
+) : BaseViewModel(application) { // BaseViewModel'den türetilerek coroutine yönetimi sağlanır.
 
-   var cryptoList = MutableLiveData<List<CryptoModel>?>()
-    // Crypto verilerini tutacak LiveData, veriler alındığında UI otomatik olarak güncellenir
+    // Kripto verilerini tutacak LiveData. Veriler alındığında UI otomatik olarak güncellenir.
+    var cryptoList = MutableLiveData<List<CryptoModel>?>()
+
+    // Hata durumunu tutacak LiveData. API çağrısı başarısız olduğunda true olur.
     var error = MutableLiveData<Boolean>()
+
+    // Yükleme durumunu tutacak LiveData. Veriler yüklenirken true olur.
     val loading = MutableLiveData<Boolean>()
+
+    // Orijinal kripto listesini tutacak LiveData. Arama işlemlerinde kullanılır.
     var initialCrypto = MutableLiveData<List<CryptoModel>>()
+
+    // SharedPreferences, kullanıcı tercihlerini veya önbellek sürelerini saklamak için kullanılır.
     val sharedPreferences = CustomSharedPreferences(application)
 
+    // Veritabanı ve DAO (Data Access Object) nesneleri.
     val db = CryptoDataBase(application)
     private val cryptoDao = db.cryptoDao()
-    private var refreshTime = 10 * 60 * 1000 * 1000 * 1000L//10 dakika
-    //10 dakikayı nanosecond cinsinden 600,000,000,000 nanosecond olarak temsil eder.
 
-//refreshLayout olacak
-    //gerekli metotlar yapılacak
-    //CryptoDao  olusturulacak
-    //
+    // Verilerin ne sıklıkla yenileneceğini belirleyen süre (10 dakika).
+    private var refreshTime = 10 * 60 * 1000 * 1000 * 1000L // 10 dakika (nanosecond cinsinden).
 
-
-    //var isUsingOriginalList=MutableLiveData<Boolean>()
-    fun LoadCrypto() {
-       /* val updateTime = sharedPreferences.getTime()
-        if (updateTime != null && updateTime != 0L && System.nanoTime() - updateTime < refreshTime) {//
-//
-            getFromSqlLite()
-            Toast.makeText(getApplication(), "getDataFromSqlLite metodu çalıştı", Toast.LENGTH_LONG).show()
-
-
-
-
-        }
-        else{
-            getLoadCryptoApi()
-            Toast.makeText(getApplication(), "getDataFromApi metodu çalıştı", Toast.LENGTH_LONG).show()
-}*/
-        getLoadCryptoApi()
-    }
-
+    // ViewModel oluşturulduğunda kripto verilerini yükler.
     init {
         LoadCrypto()
     }
 
+    // Kripto verilerini yüklemek için çağrılan fonksiyon.
+    fun LoadCrypto() {
+        getLoadCryptoApi()
+    }
 
+    // Kripto verilerini API'den yükler.
+    fun getLoadCryptoApi() {
+        // API'den sorgulanacak kripto para birimlerinin listesi.
+        val cryptoies = listOf(
+            "bitcoin",   // BTC
+            "ethereum",  // ETH
+            "ripple",    // XRP
+            "litecoin",  // LTC
+            "solana",    // SOL
+            "cardano",   // ADA
+            "polkadot",  // DOT
+            "binancecoin" // BNB
+        )
+
+        // Yükleme durumunu başlat ve hata durumunu sıfırla.
+        loading.value = true
+        error.value = false
+
+        // Kripto para birimlerinin ID'lerini virgülle birleştirerek API'ye gönderilecek hale getir.
+        val ids = cryptoies.joinToString(",")
+
+        // Coroutine başlat ve API çağrısını yap.
+        launch(Dispatchers.IO) {
+            val response = repository.getCrypto("usd", ids) // API'den verileri al.
+
+            // Ana thread'e geç ve sonuçları işle.
+            withContext(Dispatchers.Main) {
+                if (response.isSuccessful) { // API çağrısı başarılı ise.
+                    response.body()?.let { response ->
+                        println("API çağrısı başarılı.")
+                        // Alınan verileri işle ve UI'ı güncelle.
+                        showCryptos(response)
+                    }
+                } else { // API çağrısı başarısız ise.
+                    error.value = true
+                    loading.value = false
+                    println("API çağrısı başarısız. Hata kodu: ${response.code()}")
+                }
+            }
+        }
+    }
+
+    // Kripto verilerini UI'da göstermek için kullanılan fonksiyon.
+    fun showCryptos(Crypolist: List<CryptoModel>) {
+        cryptoList.value = Crypolist // LiveData'yı güncelle.
+        loading.value = false // Yükleme durumunu durdur.
+        initialCrypto.value = Crypolist // Orijinal listeyi sakla.
+        error.value = false // Hata durumunu sıfırla.
+    }
+
+    // Kripto para birimlerini aramak için kullanılan fonksiyon.
     fun searchCrypto(query: String?) {
-        loading.value=true
+        loading.value = true // Yükleme durumunu başlat.
 
+        // Orijinal kripto listesini al.
         val listToSearch = initialCrypto.value
 
+        // Coroutine başlat ve arama işlemini yap.
         launch(Dispatchers.Default) {
-            val results =
-                listToSearch?.filter { it.symbol.contains(query?.trim() ?: "", ignoreCase = true) }
-            withContext(Dispatchers.Main) {
-                loading.value=false
-               cryptoList.value = results//
-                println("search crypto metodu tetkilendi ve çalıştı")
-            }
-        }
-
-
-    }
-
-
-        fun getLoadCryptoApi() {
-            val cryptoies = listOf(
-                "bitcoin",   // BTC
-                "ethereum",  // ETH
-                "ripple",    // XRP
-                "litecoin",  // LTC
-                "solana",    // SOL
-                "cardano",   // ADA
-                "polkadot",  // DOT
-                "binancecoin" // BNB
-            )
-            loading.value = true
-            error.value = false
-            // val results = mutableListOf<List<CryptoModel>>()
-            val ids = cryptoies.joinToString(",")
-            /*
-listesindeki tüm ID'leri virgülle ayırarak tek bir String haline getiriyoruz.
-Bu, API'ye tek seferde birden fazla kripto para sorgusu gönderebilmek için kullanılıyor.
- */
-
-            launch(Dispatchers.IO) {
-                    val  response = repository.getCrypto("usd", ids)
-
-
-                    withContext(Dispatchers.Main) {
-                        if (response.isSuccessful) {
-                            response.body()?.let { response ->
-                                println("response.isSuccessful")
-                                for (crypto in response) {
-                                    println(crypto.symbol.uppercase())  // `symbol` büyük harfe çevirip yazdırıyoruz
-                                    println(crypto.currentPrice)        // Fiyat bilgisi
-                                    println(crypto.image)
-
-                                // Resim URL'si
-                                }
-                                /* response.forEach { crypto ->
-                                  println(crypto.symbol.uppercase())  // Büyük harfe çevirerek yazdırıyoruz
-                                  println(crypto.currentPrice)
-                                  println(crypto.image)
-                              }*/
-                                showCryptos(response)
-                              //  storeinSqlLite(response)
-
-
-                              //  cryptoList.value = response
-                                //initialCrypto.value = response
-
-                               // loading.value = false
-                                //error.value = false
-
-                            }
-
-                        } else {
-                            error.value = true
-                            loading.value = false
-                            println("response.isNotSuccessful")
-                            println(response.code())
-                        }
-
-                    }
-
-
-                }
-
-        }
-
-   /* fun storeinSqlLite(Crypolist:List<CryptoModel>){
-        launch(Dispatchers.IO) {
-
-           // cryptoDao.deleteAll()
-
-            cryptoDao.insertAll(*Crypolist.toTypedArray())// ile listeyi tekil elemanlara ayırıyoruz
-
-            withContext(Dispatchers.Main) {
-            sharedPreferences.saveApiCallTime(System.nanoTime())//zamanı kaydediyoruz
-
-            }
-        }
-
-    }*/
-
-
-  /*  fun getFromSqlLite(){
-        loading.value=true
-        launch(Dispatchers.IO) {
-            val cryptoList = cryptoDao.getAllCrypto()
-            withContext(Dispatchers.Main) {
-
-                showCryptos(cryptoList)
-
+            // Arama sorgusuna göre filtreleme yap.
+            val results = listToSearch?.filter {
+                it.symbol.contains(query?.trim() ?: "", ignoreCase = true)
             }
 
+            // Ana thread'e geç ve sonuçları UI'da göster.
+            withContext(Dispatchers.Main) {
+                loading.value = false // Yükleme durumunu durdur.
+                cryptoList.value = results // Filtrelenmiş listeyi LiveData'ya atar.
+                println("Arama işlemi tamamlandı ve sonuçlar güncellendi.")
+            }
         }
-
-    }*/
-    fun showCryptos(Crypolist:List<CryptoModel>){
-
-        cryptoList.value = Crypolist
-        loading.value = false
-
-        initialCrypto.value = Crypolist
-
-        error.value = false
     }
-
-
-    }
-
+}

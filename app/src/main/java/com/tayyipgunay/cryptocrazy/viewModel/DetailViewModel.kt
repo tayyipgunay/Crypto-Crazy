@@ -15,35 +15,40 @@ import retrofit2.Response
 import javax.inject.Inject
 
 @HiltViewModel
-class DetailViewModel @Inject constructor(private val repository: CryptoRepository, application: Application) :BaseViewModel(application) {
+class DetailViewModel @Inject constructor(
+    private val repository: CryptoRepository, // CryptoRepository, veri kaynağına erişim sağlar.
+    application: Application // Application context'i, veritabanı işlemleri için kullanılır.
+) : BaseViewModel(application) { // BaseViewModel'den türetilerek coroutine yönetimi sağlanır.
 
+    // Kripto verilerini tutacak LiveData. Veriler alındığında UI otomatik olarak güncellenir.
     var cryptoLiveData = MutableLiveData<List<CryptoModel>?>()
-    val db = CryptoDataBase(application)
-    private val cryptoDao = db.cryptoDao()
 
+
+
+    // Belirli bir kripto para biriminin detaylarını yüklemek için kullanılan fonksiyon.
     fun loadCrypto(ids: String) {
+        // Coroutine başlat ve API çağrısını yap.
         launch(Dispatchers.IO) {
-          val response = repository.getDetailCrypto("usd", ids)
+            // API'den belirli bir kripto para biriminin detaylarını al.
+            val response = repository.getDetailCrypto("usd", ids)
+
+            // Ana thread'e geç ve sonuçları işle.
             withContext(Dispatchers.Main) {
-                if (response.isSuccessful) {
-
+                if (response.isSuccessful) { // API çağrısı başarılı ise.
                     response.body()?.let { response ->
+                        // Alınan verileri logla.
+                        println(response[0].symbol) // Kripto para biriminin sembolü.
+                        println(response[0].currentPrice) // Kripto para biriminin güncel fiyatı.
+                        println(response[0].image) // Kripto para biriminin resim URL'si.
 
-                            println(response[0].symbol)
-                            println(response[0].currentPrice)
-                            println(response[0].image)
-
-                        cryptoLiveData.value=response
-
+                        // LiveData'yı güncelle ve UI'ı tetikle.
+                        cryptoLiveData.value = response
                     }
-                } else {
-                    println(response.code())
+                } else { // API çağrısı başarısız ise.
+                    println("API çağrısı başarısız. Hata kodu: ${response.code()}")
                 }
-
-
             }
         }
-
     }
 }
   /*  fun getCryptoFromRoom(cryptoid: String) {
